@@ -2,6 +2,7 @@ package es.carapapa.caregiver.config;
 
 import es.carapapa.caregiver.filter.JwtRequestFilter;
 import es.carapapa.caregiver.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,12 +28,17 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/login","/api/auth/register").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                );
+                )
+                .exceptionHandling(exception -> exception
+                                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                    response.getWriter().write("Acceso prohibido. No tienes permisos.");
+                                }));
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

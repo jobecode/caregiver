@@ -29,24 +29,26 @@ public class ObservationController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getObservationByDate(@RequestParam(required = false) String date) {
-        // Validación: la fecha debe ser proporcionada
+    public ResponseEntity<?> getObservationByDate(@RequestParam() String date) {
         if (date == null || date.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "La fecha es obligatoria y no puede estar vacía."));
         }
 
         try {
-            LocalDate localDate = LocalDate.parse(date); // Convierte la fecha
+            LocalDate localDate = LocalDate.parse(date);
+            Optional<Observation> observation = observationRepository.findByDate(localDate);
 
-            return observationRepository.findByDate(localDate)
-                    .map(ResponseEntity::ok)  // Si existe, devolver la observación
-                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .body((Observation) Map.of("error", "No se encontró una observación para la fecha: " + date)));
-
+            if (observation.isPresent()) {
+                return ResponseEntity.ok(observation.get());
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "No se encontró una observación para la fecha: " + date));
+            }
         } catch (DateTimeParseException e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Formato de fecha inválido. Usa YYYY-MM-DD."));
         }
     }
+
 
 
 
